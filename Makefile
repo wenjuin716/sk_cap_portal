@@ -1,5 +1,5 @@
 SRC=main.c
-OBJS=$(SRC:.c=.o) 
+OBJS=timer.o list.o 
 EXE=capPortal
 
 CFLAGS += -I$(OS_LIB_PATH)/include
@@ -10,15 +10,12 @@ LDFLAGS = -L$(OS_LIB_PATH)/
 all: capPortal
 
 capPortal: $(OBJS)
-	$(CC) $(OBJS) $(CFLAGS) $(LDFLAGS) -o $(EXE)
+	$(CC) $(SRC) $(OBJS) $(CFLAGS) $(LDFLAGS) -o $(EXE) -pthread
 
-#dhcpd: $(DHCPD_OBJS) 
-#	$(CC) $(DHCPD_OBJS) $(CFLAGS) $(LDFLAGS) -o dhcpd  && $(STRIP) dhcpd && ls -l dhcpd
+timer.o: timer.c
+	$(CC) $(CFLAGS) -c -o $@ $< -pthread
 
-#dhcpc: $(DHCPC_OBJS) 
-#	$(CC) $(DHCPC_OBJS) $(CFLAGS) $(LDFLAGS) -o dhcpc  && $(STRIP) dhcpc && ls -l dhcpc
-	
-%.o:%.c
+%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 .PHONY: clean

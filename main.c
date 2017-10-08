@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+//#include "timer.h"
+
 #define DEFAULT_PORT 8080
 #define FALSE	0
 #define TRUE	1
@@ -58,7 +60,7 @@ void main(int argc, char** argv){
 	struct timeval tv;
 	int retval;
 	int maxsock;
-
+	pthread_t pid;
 
 	//Default Values PATH = ~/ and PORT=10000
 	int port=DEFAULT_PORT; 
@@ -78,6 +80,12 @@ void main(int argc, char** argv){
 		}
 	}
 
+	pid = epoll_init();
+	if(pid <= 0){
+		perror("epoll_init() error");
+		return;
+	}
+
 	if((listenfd=initRedirectServer(port)) < 0){
 		fprintf(stderr,"Socket init Fail\n");
 		return;
@@ -91,7 +99,7 @@ void main(int argc, char** argv){
 		maxsock = (maxsock > listenfd)?maxsock: listenfd;
 
 	        /* Wait up to five seconds. */
-	        tv.tv_sec = 300;
+	        tv.tv_sec = 5;
 	        tv.tv_usec = 0;
 
 		retval = select(maxsock + 1, &fds, NULL, NULL, &tv);
@@ -100,8 +108,9 @@ void main(int argc, char** argv){
 			fprintf(stderr,"select error\n");
 			continue;
 		}else if(retval == 0){
-			fprintf(stderr,"No data within five seconds.\n");
-			loop=FALSE;
+			fprintf(stderr,"No data within %d seconds.\n", tv.tv_sec);
+			add_timer(NULL, 3);
+			//loop=FALSE;
 			continue;
 		}else if (FD_ISSET(listenfd, &fds)){
 			fprintf(stderr,"Data is available now.\n");
@@ -111,6 +120,12 @@ void main(int argc, char** argv){
 	}
 	
 	close(listenfd);
+
+	// Wait main timer thread join
+	if(pthread_join(pid,NULL) != 0){
+		perror("pthread_join() error");
+		return;
+	}
 
 	return;
 }
